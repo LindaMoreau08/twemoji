@@ -39,12 +39,12 @@ module Twemoji
             tags.each do |tag|
               #puts "#{tag.text}"
               twemoji_list << "#{tag.text}"
-              rescue StandardError => err
-                puts "error parsing file #{list_file}: "
-                puts err.message + "\n"
+            end
+          rescue StandardError => err
+             warn "error parsing file #{list_file}: "
+              puts err.message + "\n"
             end
           end
-        end
         return twemoji_list
       end
 
