@@ -38,7 +38,8 @@ module Twemoji
             tags = document.xpath("//li")
             tags.each do |tag|
               #puts "#{tag.text}"
-              twemoji_list << "#{tag.text}"
+              hex_string = unpack("#{tag.text}")
+              twemoji_list << { text: "#{tag.text}", raw_hex: hex_string  }
             end
           rescue StandardError => err
              warn "error parsing file #{list_file}: "
@@ -48,10 +49,7 @@ module Twemoji
         return twemoji_list
       end
 
-      # the_list = self.get_twemoji_maxcdn_emoji_list
-      # unless the_list.nil? or the_list.length < 1
-      #   puts unpack(the_list[0])
-      # end
+    
       end
     end
   end
