@@ -1,8 +1,8 @@
-require 'uri'
+
 require 'net/http'
 require 'openssl'
+require 'uri'
 
-#class WebUtils
 module Twemoji
   module Utils
     module Web
@@ -62,12 +62,7 @@ module Twemoji
 
       url_base = Web.resolve_url(base_url)
       folder_name = URI(url_base).path.split('/').last
-      folder_name = folder_name + '_' + Time.now.strftime("%F")
-      output_dir = File.join(File.dirname(__FILE__), '../data/'+folder_name)
-      unless Dir.exists?(output_dir)
-        Dir.mkdir(output_dir)
-      end
-      puts "#{output_dir} exists?  = ", Dir.exists?(output_dir)
+      output_dir = create_folders(folder_name)
       files_retrieved = 0
       files.each do |file|
         url = url_base + file
@@ -95,6 +90,24 @@ module Twemoji
       puts "#{files_retrieved} files saved in #{folder_name}."
       return files_retrieved, output_dir
     end
+
+    def self.create_folders(folder_name)
+      base_dir = File.join(File.dirname(__FILE__), '../data/')
+        date_folder = Time.now.strftime("%F")
+        date_dir = File.join(base_dir, date_folder)
+        unless Dir.exists?(date_dir)
+          Dir.mkdir(date_dir)
+        end
+        unless folder_name
+          folder_name = Time.now.strftime("%H_%M_%S")
+        end
+        folder_dir = File.join(date_dir,folder_name)
+        unless Dir.exists?(folder_dir)
+          Dir.mkdir(folder_dir)
+        end
+        File.absolute_path(folder_dir)
+    end
+
 
    end
  end

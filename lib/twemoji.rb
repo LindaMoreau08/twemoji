@@ -5,7 +5,7 @@ require "json"
 require "twemoji/version"
 require "twemoji/map"
 require "twemoji/configuration"
-require "twemoji/utils/unicode"
+require "twemoji/utils/data"
 
 # Twemoji is a Ruby implementation, parses your text, replace emoji text
 # with corresponding emoji image. Default emoji images are from Twiiter CDN.
@@ -320,7 +320,7 @@ module Twemoji
     # @return String representation of unicode codepoint
     # @private
     def self.unicode_to_str(unicode)
-      Twemoji::Utils::Unicode.unpack(unicode)
+      Twemoji::Utils::Data.unpack(unicode)
     end
 
     # Coverts hash of attributes into HTML attributes.
