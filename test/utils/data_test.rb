@@ -31,30 +31,52 @@ module Twemoji
 
 
       def test_get_twemoji_data_complete
-        result = Twemoji::Utils::Data.get_twemoji_maxcdn_emoji_list
+        result, num_unicode_names = Twemoji::Utils::Data.get_twemoji_maxcdn_emoji_list
         expected = 3245  # num emoji in v 12.1
         num_emoji = result.length
         puts "num_emoji==#{num_emoji}"
         assert num_emoji >= expected
+        assert num_emoji == num_unicode_names
       end
 
 
       def test_get_twemoji_data_outputs_expected_fields
-        result = Twemoji::Utils::Data.get_twemoji_maxcdn_emoji_list
+        result, num_uninames = Twemoji::Utils::Data.get_twemoji_maxcdn_emoji_list
         #  unless result.nil? or result.length < 1
           puts result[0]
+          puts num_uninames
         #end
         assert result[0] == {:text=>"🀄️",
                              :hex=>"1f004",
                              :png=>"https://twemoji.maxcdn.com/v/latest/72x72/1f004.png",
                              :svg=>"https://twemoji.maxcdn.com/v/latest/svg/1f004.svg",
-                             :legacy_name=>':mahjong:'}
+                             :legacy_name=>':mahjong:',
+                             :unicode_name=>':mahjong_red_dragon:'
+        }
       end
 
-
       def test_archive_yml_maps
-        num_copied = Twemoji::Utils::Data.archive_yml_maps
+        data_dir, num_copied = Twemoji::Utils::Data.archive_yml_maps
+        puts "data dir is #{data_dir}"
         assert 3 == num_copied
+      end
+
+      def test_write_yaml
+          emoji_data = [{:text=>"🀄️",
+                      :hex=>"1f004",
+                      :png=>"https://twemoji.maxcdn.com/v/latest/72x72/1f004.png",
+                      :svg=>"https://twemoji.maxcdn.com/v/latest/svg/1f004.svg",
+                      :legacy_name=>':mahjong:',
+                      :unicode_name=>':mahjong_red_dragon:'
+                     }]
+        num_emoji = Twemoji::Utils::Data.write_yaml_files(emoji_data)
+        assert  1 == num_emoji
+      end
+
+      def test_update_data
+        num_emoji = Twemoji::Utils::Data.update_data
+        puts num_emoji
+        assert 3245 <= num_emoji
       end
 
     end

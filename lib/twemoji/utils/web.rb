@@ -55,13 +55,18 @@ module Twemoji
     end
 
     # TODO: make url_base and file list into parameters
-    def self.get_files(base_url, files)
+    def self.get_files(base_url, files, prefix='')
       require 'net/http'
       require 'uri'
       require_relative 'web.rb'
 
       url_base = Web.resolve_url(base_url)
-      folder_name = URI(url_base).path.split('/').last
+      if prefix
+        unless prefix[prefix.length - 1] == '_'
+          prefix = prefix + '_'
+        end
+      end
+      folder_name = prefix + URI(url_base).path.split('/').last
       output_dir = create_folders(folder_name)
       files_retrieved = 0
       files.each do |file|
@@ -107,6 +112,7 @@ module Twemoji
         end
         File.absolute_path(folder_dir)
     end
+
 
 
    end
