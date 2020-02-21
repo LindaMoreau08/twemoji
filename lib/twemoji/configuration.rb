@@ -24,6 +24,7 @@ module Twemoji
     CODE_MAP_FILE = File.join(DATA_DIR, "emoji-unicode.yml")
     PNG_MAP_FILE = File.join(DATA_DIR, "emoji-unicode-png.yml")
     SVG_MAP_FILE = File.join(DATA_DIR, "emoji-unicode-svg.yml")
+    CODE_SUPP_FILE = File.join(DATA_DIR, "supplemental.yml")
 
     attr_accessor :asset_root, :png_base, :svg_base, :preview_base, :file_ext, :class_name, :img_attrs
 

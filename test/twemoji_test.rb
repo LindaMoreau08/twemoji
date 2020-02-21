@@ -2,10 +2,15 @@ require "test_helper"
 
 class TwemojiTest < Minitest::Test
   def setup
+    @num_emojis_supported = 3243
   end
 
+
+
+
+
   def test_number_of_emojis
-    assert_equal 1661, Twemoji.codes.size
+    assert_equal @num_emojis_supported, Twemoji.codes.size
   end
 
   def test_twemoji_png_and_svg_not_loaded_by_default
@@ -20,7 +25,7 @@ class TwemojiTest < Minitest::Test
     assert_raises NameError do
       Twemoji::PNG
     end
-    assert_equal 1661, Twemoji.png.size
+    assert_equal @num_emojis_supported, Twemoji.png.size
   end
 
   def test_twemoji_svg
@@ -28,19 +33,22 @@ class TwemojiTest < Minitest::Test
     assert_raises NameError do
       Twemoji::SVG
     end
-    assert_equal 1661, Twemoji.svg.size
+    assert_equal @num_emojis_supported, Twemoji.svg.size
   end
 
   def test_finder_methods_cannot_find_by_more_than_one
     exception = assert_raises ArgumentError do
       Twemoji.find_by(text: ":heart_eyes:", code: "1f60d")
     end
-
     assert_equal "Can only specify text, code or unicode one at a time", exception.message
   end
 
   def test_finder_methods_find_by_text
     assert_equal "1f60d", Twemoji.find_by(text: ":heart_eyes:")
+  end
+
+  def test_finder_methods_find_by_text
+    assert_equal "1f98b", Twemoji.find_by(text: ":butterfly:")
   end
 
   def test_finder_methods_find_by_code
@@ -241,7 +249,6 @@ class TwemojiTest < Minitest::Test
 
   def test_parse_empty_class_name
     expected = '<img draggable="false" title=":flag-br:" alt="🇧🇷" src="https://twemoji.maxcdn.com/2/svg/1f1e7-1f1f7.svg">'
-
     assert_equal expected, Twemoji.parse('🇧🇷', class_name: nil)
     assert_equal expected, Twemoji.parse('🇧🇷', class_name: '')
   end

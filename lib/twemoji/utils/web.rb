@@ -113,8 +113,6 @@ module Twemoji
         File.absolute_path(folder_dir)
     end
 
-
-
    end
  end
 end

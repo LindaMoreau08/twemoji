@@ -26,13 +26,14 @@ module Twemoji
       @unicode_map = nil
       @twemoji_list = []
 
-        def self.update_data
+        def self.update_data(backup_yml_inplace=false)
           # archive yaml
           yaml_bak_dir, num_archived = archive_yml_maps
           puts "#{num_archived} existing yaml files archived to #{yaml_bak_dir}"
 
           # get unicode data
           get_unicode
+          load_supplemental
 
           # get twejomi preview list
           puts "\n\ngetting twemoji preview list..."
@@ -41,9 +42,7 @@ module Twemoji
           puts "  #{num_emoji} emoji retrieved.\n"
 
           # write new yaml data
-          write_yaml_files(@twemoji_list)
-
-          num_emoji
+          write_yaml_files(@twemoji_list, backup_yml_inplace)
         end
 
 
@@ -70,7 +69,6 @@ module Twemoji
         def self.load_unicode_map(unicode_file)
           unicode_map = {}
           entry_num = 0
-
           File.open(unicode_file).each do |line|
             line = line.strip
             unless line == '' or line[0] == '#'
@@ -87,6 +85,19 @@ module Twemoji
           end
           unicode_map
         end
+
+
+      def self.load_supplemental(overwrite=false)
+        if @unicode_map.nil?
+          @unicode_map = {}
+        end
+        supplemental = Twemoji.load_yaml(Configuration::CODE_SUPP_FILE).invert
+        if overwrite
+          @unicode_map.merge!(supplemental)
+        else
+          @unicode_map = supplemental.merge!(@unicode_map)
+        end
+      end
 
         def self.get_unicode_shortname(description, code)
           description = description.strip.downcase.gsub(': ','-').gsub(' ','_')
@@ -144,7 +155,11 @@ module Twemoji
 
         def self.format_unpacked(hex_string)
           hex_string = hex_string.strip.downcase
-          hex_string.sub(/-fe0f[\n\r]?$/, '')
+          hex_string = hex_string.sub(/-fe0f[\n\r]?$/, '')
+          if hex_string =~ /^[0-9]+$/
+            hex_string = "'" + hex_string + "'"
+          end
+          hex_string
         end
 
         def self.construct_twemoji_png_path(hex_string)
@@ -157,18 +172,33 @@ module Twemoji
 
       def self.archive_yml_maps
         yaml_dir = Twemoji::Utils::Web.create_folders('yaml_bak')
+        bak_dir = Twemoji::Utils::Web.create_folders(File.join('yaml_bak', Time.now.strftime("%H_%M_%S")))
         data_dir = File.join(File.dirname(__FILE__), '../data/*.yml')
         num_copied = 0
         Dir.glob(data_dir).each do|f|
-          FileUtils.copy(f, yaml_dir)
+          FileUtils.copy(f, bak_dir)
           num_copied += 1
         end
         return data_dir, num_copied
       end
 
+      def self.backup_yaml_in_place
+        data_dir = File.join(File.dirname(__FILE__), '../data')
+        data_files = File.join(data_dir, '*.yml')
+        date_time = Time.now.strftime("%F_%H_%M_%S")
+        num_copied = 0
+        Dir.glob(data_files).each do|f|
+          backup_file = f + ".bak_#{date_time}"
+          FileUtils.copy(f, backup_file)
+          num_copied += 1
+        end
+        num_copied
+      end
+
 
         def self.assign_legacy_name(codepoints)
-          Twemoji::invert_codes.has_key?(codepoints) ? Twemoji::invert_codes[codepoints] : ''
+          codes = codepoints.gsub("'",'')
+          Twemoji::invert_codes.has_key?(codes) ? Twemoji::invert_codes[codes] : ''
         end
 
         def self.assign_unicode_name(codepoints)
@@ -177,40 +207,59 @@ module Twemoji
           #
           # TODO: add tests to verify that all legacy names are accounted for (numbers match up)
           # also, make a name builder based on individual codepoints
-          short_name = @unicode_map.key?(codepoints) ? @unicode_map[codepoints] : ''
+          codes = codepoints.gsub("'",'')
+          short_name = @unicode_map.key?(codes) ? @unicode_map[codes] : ''
+          if short_name.nil? or short_name.strip()==''
+            codes = codes.strip.gsub(/-fe0f$/, '')
+            short_name = @unicode_map.key?(codes) ? @unicode_map[codes] : ''
+          end
           short_name.gsub(/\p{Z}+/,'_').strip
         end
 
         # TODO:  Add option to write only unicode names (use_legacy=false)
-        def self.write_yaml_files(emoji_data)
+        def self.write_yaml_files(emoji_data, backup_yml_in_place)
           data_dir = File.join(File.dirname(__FILE__), '../data')
+          num_written = 0
           if emoji_data
-            extension =  ".new." + Time.now.strftime("%F_%H_%M_%S")
+            if backup_yml_in_place
+              puts "redundantly backing up yaml in place..."
+              backup_yaml_in_place
+              extension = ""
+            else
+              extension =  ".new." + Time.now.strftime("%F_%H_%M_%S")
+            end
+
             uni_file = File.open(File.join(data_dir,"emoji-unicode.yml"+extension), "w:UTF-8")  #  ":mahjong:": 1f004
             png_file = File.open(File.join(data_dir,"emoji-unicode-png.yml"+extension), "w:UTF-8")  # ":mahjong:": https://twemoji.maxcdn.com/2/72x72/1f004.png
             svg_file = File.open(File.join(data_dir,"emoji-unicode-svg.yml"+extension), "w:UTF-8")  # ":mahjong:": https://twemoji.maxcdn.com/2/svg/1f004.svg
+            err_file = File.open(File.join(data_dir,"unknown_names.yml"), "w:UTF-8")  # ":mahjong:": https://twemoji.maxcdn.com/2/svg/1f004.svg
             uni_file.write("---\n")
             png_file.write("---\n")
             svg_file.write("---\n")
-            num_written = 0
+
             emoji_data.each do | emoji_info|
               begin
                 short_name = emoji_info[:legacy_name].empty? ? emoji_info[:unicode_name] : emoji_info[:legacy_name]
-                uni_file.write("\"#{short_name}\": #{emoji_info[:hex]}\n")
-                png_file.write("\"#{short_name}\": #{emoji_info[:png]}\n")
-                svg_file.write("\"#{short_name}\": #{emoji_info[:svg]}\n")
-                num_written += 1
+                unless short_name.nil? or short_name == ''
+                  uni_file.write("\"#{short_name}\": #{emoji_info[:hex]}\n")
+                  png_file.write("\"#{short_name}\": #{emoji_info[:png]}\n")
+                  svg_file.write("\"#{short_name}\": #{emoji_info[:svg]}\n")
+                  num_written += 1
+                else
+                  err_file.write("\"#{short_name}\": #{emoji_info[:hex]}\n")
+                end
               rescue StandardError => e
                 warn e.message
+                err_file.write("#{e.message}\n")
               end
             end
             uni_file.close
             png_file.close
             svg_file.close
+            err_file.close
           end
-          num_written
+          return num_written, emoji_data.length
         end
-
 
 
       end
