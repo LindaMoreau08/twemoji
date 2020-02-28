@@ -29,7 +29,7 @@ module Twemoji
 
 
       # TODO: change to true for testing or debugging data updater capability, this writes and alters yaml files
-      test_data_updater = false
+      test_data_updater = true
       if test_data_updater
 
         def test_get_twemoji_data_complete
@@ -65,13 +65,15 @@ module Twemoji
         def test_archive_yml_maps
           data_dir, num_copied = Twemoji::Utils::Data.archive_yml_maps
           puts "data dir is #{data_dir}"
-          assert 3 == num_copied
+          assert 4 == num_copied
         end
 
 
-        def test_backup_yaml_in_place
-          num_bak = Twemoji::Utils::Data.backup_yaml_in_place
-          assert 3 == num_bak
+        if false
+          def test_backup_yaml_in_place
+            num_bak = Twemoji::Utils::Data.backup_yaml_in_place
+            assert 4 == num_bak
+          end
         end
 
 
@@ -83,12 +85,12 @@ module Twemoji
                         :legacy_name=>':mahjong:',
                         :unicode_name=>':mahjong_red_dragon:'
                        }]
-          num_emoji = Twemoji::Utils::Data.write_yaml_files(emoji_data, false)
-          assert  1 == num_emoji
+            num_written, num_emoji = Twemoji::Utils::Data.write_yaml_files(emoji_data, false)
+          assert  num_written == num_emoji
         end
 
         def test_update_data
-          num_written, num_unk = Twemoji::Utils::Data.update_data(true)
+          num_written, num_unk = Twemoji::Utils::Data.update_data(false)
           puts "num written: #{num_written}"
           puts "num unknown: #{num_unk}"
           assert 3245 <= num_written + num_unk

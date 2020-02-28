@@ -18,8 +18,6 @@ module Twemoji
         assert Dir.exist?(expected)
       end
 
-
-
     end
   end
 end

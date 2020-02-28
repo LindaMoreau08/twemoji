@@ -83,10 +83,10 @@ module Twemoji
           end
           files_retrieved += 1
         end
-        end
       rescue StandardError => err
         puts "error retrieving file #{file}: "
         puts err.message + "\n"
+        end
       end
       unless files_retrieved == files.length
         diff = files.length - files_retrieved
@@ -95,6 +95,7 @@ module Twemoji
       puts "#{files_retrieved} files saved in #{folder_name}."
       return files_retrieved, output_dir
     end
+
 
     def self.create_folders(folder_name)
       base_dir = File.join(File.dirname(__FILE__), '../data/')

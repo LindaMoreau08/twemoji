@@ -163,19 +163,25 @@ module Twemoji
         end
 
         def self.construct_twemoji_png_path(hex_string)
+          hex_string = hex_string.gsub("'","")
           Twemoji.configuration.png_base + hex_string + '.png'
         end
 
         def self.construct_twemoji_svg_path(hex_string)
+          hex_string = hex_string.gsub("'","")
           Twemoji.configuration.svg_base + hex_string + '.svg'
         end
 
       def self.archive_yml_maps
         yaml_dir = Twemoji::Utils::Web.create_folders('yaml_bak')
         bak_dir = Twemoji::Utils::Web.create_folders(File.join('yaml_bak', Time.now.strftime("%H_%M_%S")))
-        data_dir = File.join(File.dirname(__FILE__), '../data/*.yml')
+        data_dir = Configuration::DATA_DIR
         num_copied = 0
-        Dir.glob(data_dir).each do|f|
+        yml_maps = [Configuration::CODE_MAP_FILE,
+                    Configuration::PNG_MAP_FILE,
+                    Configuration::SVG_MAP_FILE,
+                    Configuration::CODE_SUPP_FILE]
+        yml_maps.each do|f|
           FileUtils.copy(f, bak_dir)
           num_copied += 1
         end
@@ -183,11 +189,13 @@ module Twemoji
       end
 
       def self.backup_yaml_in_place
-        data_dir = File.join(File.dirname(__FILE__), '../data')
-        data_files = File.join(data_dir, '*.yml')
+        yml_maps = [Configuration::CODE_MAP_FILE,
+                    Configuration::PNG_MAP_FILE,
+                    Configuration::SVG_MAP_FILE,
+                    Configuration::CODE_SUPP_FILE]
         date_time = Time.now.strftime("%F_%H_%M_%S")
         num_copied = 0
-        Dir.glob(data_files).each do|f|
+        yml_maps.each do|f|
           backup_file = f + ".bak_#{date_time}"
           FileUtils.copy(f, backup_file)
           num_copied += 1
@@ -218,7 +226,7 @@ module Twemoji
 
         # TODO:  Add option to write only unicode names (use_legacy=false)
         def self.write_yaml_files(emoji_data, backup_yml_in_place)
-          data_dir = File.join(File.dirname(__FILE__), '../data')
+          data_dir = Configuration::DATA_DIR
           num_written = 0
           if emoji_data
             if backup_yml_in_place
@@ -228,7 +236,6 @@ module Twemoji
             else
               extension =  ".new." + Time.now.strftime("%F_%H_%M_%S")
             end
-
             uni_file = File.open(File.join(data_dir,"emoji-unicode.yml"+extension), "w:UTF-8")  #  ":mahjong:": 1f004
             png_file = File.open(File.join(data_dir,"emoji-unicode-png.yml"+extension), "w:UTF-8")  # ":mahjong:": https://twemoji.maxcdn.com/2/72x72/1f004.png
             svg_file = File.open(File.join(data_dir,"emoji-unicode-svg.yml"+extension), "w:UTF-8")  # ":mahjong:": https://twemoji.maxcdn.com/2/svg/1f004.svg
