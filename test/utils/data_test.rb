@@ -89,6 +89,7 @@ module Twemoji
           assert  num_written == num_emoji
         end
 
+
         def test_update_data
           num_written, num_unk = Twemoji::Utils::Data.update_data(false)
           puts "num written: #{num_written}"

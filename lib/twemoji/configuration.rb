@@ -29,7 +29,7 @@ module Twemoji
     attr_accessor :asset_root, :png_base, :svg_base, :preview_base, :file_ext, :class_name, :img_attrs
 
     def initialize
-      @asset_root = "https://twemoji.maxcdn.com/2"
+      @asset_root = "https://twemoji.maxcdn.com/v/latest"
       @png_base = 'https://twemoji.maxcdn.com/v/latest/72x72/'
       @svg_base = 'https://twemoji.maxcdn.com/v/latest/svg/'
       @preview_base = 'https://twitter.github.io/twemoji/2/test/'
