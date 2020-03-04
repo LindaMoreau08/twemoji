@@ -18,6 +18,12 @@ module Twemoji
         assert Dir.exist?(expected)
       end
 
+      def test_url_exists
+        assert Twemoji::Utils::Web.url_exists('https://twemoji.maxcdn.com/v/latest/72x72/1f98b.png') == true
+        uri = 'https://twemoji.maxcdn.com/v/latest/72x72/1f9cd-1f3ff-200d-2640.png'
+        assert Twemoji::Utils::Web.url_exists(uri) == false
+      end
+
     end
   end
 end

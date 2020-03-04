@@ -155,7 +155,7 @@ module Twemoji
 
         def self.format_unpacked(hex_string)
           hex_string = hex_string.strip.downcase
-          hex_string = hex_string.sub(/-fe0f[\n\r]?$/, '')
+          hex_string = handle_variation_selector(hex_string)
           if hex_string =~ /^[0-9]+$/
             hex_string = "'" + hex_string + "'"
           end
@@ -218,43 +218,70 @@ module Twemoji
           codes = codepoints.gsub("'",'')
           short_name = @unicode_map.key?(codes) ? @unicode_map[codes] : ''
           if short_name.nil? or short_name.strip()==''
-            codes = codes.strip.gsub(/-fe0f$/, '')
+            codes = handle_variation_selector(codes)
             short_name = @unicode_map.key?(codes) ? @unicode_map[codes] : ''
           end
           short_name.gsub(/\p{Z}+/,'_').strip
         end
 
-        # TODO:  Add option to write only unicode names (use_legacy=false)
-        def self.write_yaml_files(emoji_data, backup_yml_in_place)
-          data_dir = Configuration::DATA_DIR
-          num_written = 0
-          if emoji_data
-            if backup_yml_in_place
-              puts "redundantly backing up yaml in place..."
-              backup_yaml_in_place
-              extension = ""
-            else
-              extension =  ".new." + Time.now.strftime("%F_%H_%M_%S")
-            end
-            uni_file = File.open(File.join(data_dir,"emoji-unicode.yml"+extension), "w:UTF-8")  #  ":mahjong:": 1f004
-            png_file = File.open(File.join(data_dir,"emoji-unicode-png.yml"+extension), "w:UTF-8")  # ":mahjong:": https://twemoji.maxcdn.com/2/72x72/1f004.png
-            svg_file = File.open(File.join(data_dir,"emoji-unicode-svg.yml"+extension), "w:UTF-8")  # ":mahjong:": https://twemoji.maxcdn.com/2/svg/1f004.svg
-            err_file = File.open(File.join(data_dir,"unknown_names.yml"), "w:UTF-8")  # ":mahjong:": https://twemoji.maxcdn.com/2/svg/1f004.svg
-            uni_file.write("---\n")
-            png_file.write("---\n")
-            svg_file.write("---\n")
 
-            emoji_data.each do | emoji_info|
-              begin
-                short_name = emoji_info[:legacy_name].empty? ? emoji_info[:unicode_name] : emoji_info[:legacy_name]
-                unless short_name.nil? or short_name == ''
-                  uni_file.write("\"#{short_name}\": #{emoji_info[:hex]}\n")
-                  png_file.write("\"#{short_name}\": #{emoji_info[:png]}\n")
-                  svg_file.write("\"#{short_name}\": #{emoji_info[:svg]}\n")
-                  num_written += 1
-                else
-                  err_file.write("\"#{short_name}\": #{emoji_info[:hex]}\n")
+      def self.handle_variation_selector(codes)
+        code_list = codes.split('-')
+        if code_list.length == 2 and code_list[1] == 'fe0f'
+          code_list = [code_list[0]]
+        end
+        code_list.join('-')
+      end
+
+        # TODO:  Add option to write only unicode names (use_legacy=false)
+      def self.write_yaml_files(emoji_data, backup_yml_in_place, check_urls=false)
+        data_dir = Configuration::DATA_DIR
+        num_written = 0
+        if emoji_data
+          if backup_yml_in_place
+            puts "redundantly backing up yaml in place..."
+            backup_yaml_in_place
+            extension = ""
+          else
+            extension =  ".new." + Time.now.strftime("%F_%H_%M_%S")
+          end
+          uni_file = File.open(File.join(data_dir,"emoji-unicode.yml"+extension), "w:UTF-8")  #  ":mahjong:": 1f004
+          png_file = File.open(File.join(data_dir,"emoji-unicode-png.yml"+extension), "w:UTF-8")  # ":mahjong:": https://twemoji.maxcdn.com/2/72x72/1f004.png
+          svg_file = File.open(File.join(data_dir,"emoji-unicode-svg.yml"+extension), "w:UTF-8")  # ":mahjong:": https://twemoji.maxcdn.com/2/svg/1f004.svg
+          err_file = File.open(File.join(data_dir,"unknown_names.yml"), "w:UTF-8")  # ":mahjong:": https://twemoji.maxcdn.com/2/svg/1f004.svg
+          uni_file.write("---\n")
+          png_file.write("---\n")
+          svg_file.write("---\n")
+
+          num_checked = 0
+          emoji_data.each do | emoji_info|
+            begin
+                short_name = (emoji_info[:legacy_name].nil? or emoji_info[:legacy_name] =='') ? emoji_info[:unicode_name] : emoji_info[:legacy_name]
+                num_checked += 1
+                if num_checked % 100 == 0
+                  warn "NUM CHECKED: #{num_checked}"
                 end
+                if short_name.nil? or short_name == ''
+                  err_file.write("no short name for: #{emoji_info[:hex]}\n")
+                else
+                  uni_file.write("\"#{short_name}\": #{emoji_info[:hex]}\n")
+                  if check_urls
+                    if Web.url_exists(emoji_info[:png])
+                      png_file.write("\"#{short_name}\": #{emoji_info[:png]}\n")
+                    else
+                      err_file.write("file not found: \"#{short_name}\": #{emoji_info[:png]}\n")
+                    end
+                    if  Web.url_exists(emoji_info[:svg])
+                      svg_file.write("\"#{short_name}\": #{emoji_info[:svg]}\n")
+                    else
+                      err_file.write("file not found:  \"#{short_name}\": #{emoji_info[:svg]}\n")
+                    end
+                  else
+                    png_file.write("\"#{short_name}\": #{emoji_info[:png]}\n")
+                    svg_file.write("\"#{short_name}\": #{emoji_info[:svg]}\n")
+                  end
+                end
+                num_written += 1
               rescue StandardError => e
                 warn e.message
                 err_file.write("#{e.message}\n")

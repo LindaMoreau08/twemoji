@@ -86,15 +86,20 @@ module Twemoji
                         :unicode_name=>':mahjong_red_dragon:'
                        }]
             num_written, num_emoji = Twemoji::Utils::Data.write_yaml_files(emoji_data, false)
-          assert  num_written == num_emoji
+            assert  num_written == num_emoji
         end
 
 
         def test_update_data
-          num_written, num_unk = Twemoji::Utils::Data.update_data(false)
+          num_written, num_expected = Twemoji::Utils::Data.update_data(false)
           puts "num written: #{num_written}"
-          puts "num unknown: #{num_unk}"
-          assert 3245 <= num_written + num_unk
+          puts "num expected: #{num_expected}"
+          assert 3245 <= num_written
+        end
+
+        def test_handle_variation_selector
+          assert Twemoji::Utils::Data.handle_variation_selector('1234-fe0f') == '1234'
+          assert Twemoji::Utils::Data.handle_variation_selector('1234-5678-fe0f') == '1234-5678-fe0f'
         end
 
       end # (end .if test_data_updater)
